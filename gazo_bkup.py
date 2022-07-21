@@ -3,9 +3,6 @@ from PIL import Image,ImageTk
 import tkinter.ttk as ttk
 import cv2,os
 from opencv_japanese import imread
-import imagehash
-
-import tkinter.filedialog
 
 img2             = ""
 img3             = ""
@@ -64,7 +61,7 @@ gazo =[
     ['40.png','いぬ'],
     ['41.png','いぬ'], 
     ['42.png','青い鳥さん'],  
-    ['43.png','ひよこさん'], 
+    ['43.png','ひよこさん'],       
 
 ]
 
@@ -73,83 +70,60 @@ def btn_click():
     input    =  entry.get()
     type     =  combobox.get()
 
+    dirname  =  os.path.dirname(__file__)
+    images1  =  imread(dirname + '\\' + input)
+    #images1  =  imread(dirname + '\\images/' + input)     #テスト用にフォルダに入れたらにする
+
+    #入力した画像のサイズ取得
+    height = images1.shape[0]
+    width  = images1.shape[1]
+    img_size = (int(width), int(height))
+
+    # 画像をヒストグラム化する（まず入力のみ）
+    image1_hist = cv2.calcHist([images1], [2], None, [256], [0, 256])
+
     # 画像比べ処理
-    hi_hit            =  0
-    hi_hit_image      =  ""
-    hi_hit_image_name =  ""
+    hi_hit           = 0
+    hi_hit_image     =""
+    hi_hit_image_name=""
 
-    if type == 'ヒストグラム比較':
-        dirname  =  os.path.dirname(__file__)
-        images1  =  imread(dirname + '\\' + input)
-        #images1  =  imread(dirname + '\\images/' + input)     #テスト用にフォルダに入れたらにする
+    for i in range(len(gazo)):        
+        images2  =  imread(dirname + '\\images/' + gazo[i][0])
+        #入力画像に合わせてサイズを変更     
+        image2 = cv2.resize(images2, img_size)
+        # 画像をヒストグラム化する
+        image2_hist = cv2.calcHist([image2], [2], None, [256], [0, 256])
+        hit         = float(cv2.compareHist(image1_hist, image2_hist, 0))
 
-        #入力した画像のサイズ取得
-        height = images1.shape[0]
-        width  = images1.shape[1]
-        img_size = (int(width), int(height))
+        #print(hit)   #想像以上にレートが高い・・・
 
-        # 画像をヒストグラム化する（まず入力のみ）
-        image1_hist = cv2.calcHist([images1], [2], None, [256], [0, 256])
+        if float(hi_hit) < float(hit):
+            hi_hit            = hit
+            hi_hit_image      = gazo[i][0]
+            hi_hit_image_name = gazo[i][1]
 
-    else:
-        images1  =  Image.open(input)
-        hash     =  imagehash.average_hash(images1)
-        hi_hit   =  255                                        #適正なのか不明；
-   
-    #判定処理
-    for i in range(len(gazo)):
-        if type == 'ヒストグラム比較':
-            images2  =  imread(dirname + '\\images/' + gazo[i][0])
-            #入力画像に合わせてサイズを変更     
-            image2 = cv2.resize(images2, img_size)
-            # 画像をヒストグラム化する
-            image2_hist = cv2.calcHist([image2], [2], None, [256], [0, 256])
-            hit         = float(cv2.compareHist(image1_hist, image2_hist, 0))
-
-            #print(hit)   #想像以上にレートが高い・・・
-
-            if float(hi_hit) < float(hit):
-                hi_hit            = hit
-                hi_hit_image      = gazo[i][0]
-                hi_hit_image_name = gazo[i][1]
-
-        else:       #ハッシュ値変換比較
-            images2    = Image.open('images/' + gazo[i][0])
-            otherhash  = imagehash.average_hash(images2)            
-            hit        = hash - otherhash
-
-            if int(hi_hit) > int(hit):
-                hi_hit            = hit
-                hi_hit_image      = gazo[i][0]
-                hi_hit_image_name = gazo[i][1] 
-
-    #判定結果
-    if type == 'ヒストグラム比較':
-        rate = hi_hit * 100
-    else:        
-        rate = 100 - (hi_hit * 2)
-
-    if (rate)    == 100:
+    if hi_hit *100 == 100:
         word  = 'これなら知ってます！'
         word2 = 'です！絶対！'
-    elif (rate)  >= 98:
-        word  = 'あっ！これなら'
+    elif hi_hit *100 >= 98:
+        word  = 'ああ、これなら'
         word2 = 'だと思います！'
-    elif (rate)  >= 90:
-        word  = '多分なんですけど・・'
-        word2 = 'ですかね・・。'
-    elif (rate)  >= 75:
+    elif hi_hit *100 >= 90:
+        word  = 'う～ん多分'
+        word2 = 'かなぁ・・・。'
+    elif hi_hit *100 >= 75:
         word  = 'えっ・・・'
         word2 = 'とかだったりして・・・。'
-    elif (rate)  >= 40:
+    elif hi_hit *100 >= 40:
         word =  'わからないですけど・・・'
         word2 = 'ですかね・・・ハハ。'
     else:
         word  ='・・・'
         word2 ='・・とか？'
         
-    label3['text'] = '{}(判定結果値：{:.2f})'.format(word,rate)
+    label3['text'] = '{}(判定結果値：{:.2f})'.format(word,hi_hit *100)
     label4['text'] = '{}{}'.format(hi_hit_image_name,word2)
+    
     #img2  =tk.PhotoImage(file="images/" + hi_hit_image)
     #canvas.create_image(700,350,image=img2)
 
@@ -168,14 +142,10 @@ def btn_click():
     img3 = Image.open('images/' + hi_hit_image)
     img3 = img3.resize((200,200))
     img3 = ImageTk.PhotoImage(img3)
-    canvas.create_image(880,320,image=img3)
+    canvas.create_image(880,320,image=img3) 
 
-def func():
-    #name = tk.filedialog.askopenfilename(title="ファイル選択", initialdir="C:/", filetypes=[("Image File","*.png")])
-    name  = tk.filedialog.askopenfilename(title="ファイル選択", initialdir="\\images/", filetypes=[("Image File","*.png")])
-    print(name)
-    #name = tk.filedialog.askopenfilename(title="ファイル選択", initialdir="\\images/",)
-
+    
+    
 
 root=tk.Tk()
 root.title('この画像は何？教えてイロハさん！')
@@ -194,21 +164,18 @@ info =tk.Label(root,text='画像を入れるとイロハさんの「知ってる
 info.place(x=300,y=40)
 
 label=tk.Label(root,text='画像入力',font=('Arial',16))
-label.place(x=330,y=480)
+label.place(x=330,y=510)
 
 entry=tk.Entry(width=30)
 entry.place(x=430,y=514)
 
-btn2 = tkinter.Button(root, text="ファイル選択", command=func)
-btn2.place(x=340,y=514)
-
 btn=tk.Button(text='判定する',command=btn_click)
 btn.place(x=630,y=512)
 
-label3 = tk.Label(root,text='お好きな画像を選んでください。',font=('Arial',28),bg='white')
+label3 = tk.Label(root,text='お好きな画像を選んでください。',font=('Arial',30),bg='white')
 label3.place(x=330,y=600)
 
-label4 = tk.Label(root,text='',font=('Arial',28),bg='white')
+label4 = tk.Label(root,text='',font=('Arial',30),bg='white')
 label4.place(x=330,y=650)
 
 module = ('ヒストグラム比較', 'ハッシュ値変換比較')
@@ -216,6 +183,6 @@ v = tk.StringVar()
 combobox = ttk.Combobox(root, textvariable= v, values=module, style="office.TCombobox")
 combobox.current(0)
 #combobox.pack(pady=10)
-combobox.place(x=830,y=515)
+combobox.place(x=730,y=515)
 
 root.mainloop()

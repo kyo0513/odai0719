@@ -117,7 +117,8 @@ canvas = tk.Canvas(root,width=1200,height=800,bg='white')
 canvas.pack()
 
 img =tk.PhotoImage(file="images/iroha.png")
-canvas.create_image(100,450,image=img)
+#canvas.create_image(100,450,image=img)
+canvas.create_image(250,400,image=img)
 
 label=tk.Label(root,text='画像入力',font=('Arial',16))
 label.place(x=300,y=510)
