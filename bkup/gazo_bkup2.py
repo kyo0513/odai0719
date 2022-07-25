@@ -8,7 +8,6 @@ import tkinter.filedialog
 
 img2             = ""
 img3             = ""
-img4             = ""
 
 #['00.png',''],
 
@@ -16,12 +15,12 @@ gazo =[
     ['cry.png'  ,'ハカセ'],
     ['smile.png','ハカセ'],
     ['iroha.png','いろは（私）'],
-    ['kaba1.jpg','コビトカバ'],
-    ['kaba2.jpg','コビトカバ'],
-    ['kaba3.jpg','コビトカバ'],
-    ['cat1.png','ネコ'],
-    ['cat2.jpg','ネコ'],
-    ['cat3.jpg','ネコ'],
+    #['kaba1.jpg','コビトカバ'],
+    #['kaba2.jpg','コビトカバ'],
+    #['kaba3.jpg','コビトカバ'],
+    #['cat1.png','ネコ'],
+    #['cat2.jpg','ネコ'],
+    #['cat3.jpg','ネコ'],
     ['01.png','レタス'],
     ['02.png','トマト'],
     ['03.png','パプリカ'],
@@ -65,10 +64,11 @@ gazo =[
     ['41.png','いぬ'], 
     ['42.png','青い鳥さん'],  
     ['43.png','ひよこさん'], 
+
 ]
 
 def btn_click():
-    global   img2,img3,img4
+    global   img2,img3
     input    =  entry.get()
     type     =  combobox.get()
 
@@ -131,55 +131,41 @@ def btn_click():
     if (rate)    == 100:
         word  = 'これなら知ってます！'
         word2 = 'です！絶対！'
-        img4 = Image.open('images/kira.png')
-        img4 = img4.resize((128,96))
-        img4 = ImageTk.PhotoImage(img4)
-        canvas.create_image(225,200,image=img4,tag="emo")
-
     elif (rate)  >= 98:
         word  = 'あっ！これなら'
         word2 = 'だと思います！'
-        canvas.delete("emo")
+    elif (rate)  >= 90:
+        word  = '多分なんですけど・・'
+        word2 = 'ですかね・・。'
+    elif (rate)  >= 75:
+        word  = 'えっ・・・'
+        word2 = 'とかだったりして・・・。'
+    elif (rate)  >= 40:
+        word =  'わからないですけど・・・'
+        word2 = 'ですかね・・・ハハ。'
     else:
-        img4 = Image.open('images/ase.png')
-        img4 = img4.resize((80,80))
-        img4 = ImageTk.PhotoImage(img4)
-        canvas.create_image(210,170,image=img4,tag="emo")
-
-        if (rate)  >= 90:
-            word  = '多分なんですけど・・'
-            word2 = 'とか・・かな。'
-        
-        elif (rate)  >= 75:
-            word  = 'えっ・・・'
-            word2 = 'みたいな・・？。'
-
-        elif (rate)  >= 40:
-            word =  'わからないですけど・・・'
-            word2 = 'ですかね・・・ハハ。'
-        else:
-            word  ='・・・'
-            word2 ='・・とか？'
+        word  ='・・・'
+        word2 ='・・とか？'
         
     label3['text'] = '{}(判定結果値：{:.2f})'.format(word,rate)
     label4['text'] = '{}{}'.format(hi_hit_image_name,word2)
+    #img2  =tk.PhotoImage(file="images/" + hi_hit_image)
+    #canvas.create_image(700,350,image=img2)
+
+    #img2 = Image.open('images/' + hi_hit_image)
+    #img2e = tk.PhotoImage(img2)
 
     img2_txt=tk.Label(root,text='～入力した画像～',font=('Arial',14),bg='pink')
-    img2_txt.place(x=430,y=140)
+    img2_txt.place(x=430,y=150)
     img2 = Image.open(input)
-    img2_rx = float(300/img2.width)
-    img2_ry = float(300/img2.height)
-    img2 = img2.resize((int(img2.width*min(img2_rx,img2_ry)),int(img2.height*min(img2_rx,img2_ry))))
+    img2 = img2.resize((200,200))
     img2 = ImageTk.PhotoImage(img2)
     canvas.create_image(525,320,image=img2)
 
     img3_txt=tk.Label(root,text='～イロハさんの回答～',font=('Arial',14),bg='pink')
-    img3_txt.place(x=780,y=140)
+    img3_txt.place(x=780,y=150)
     img3 = Image.open('images/' + hi_hit_image)
-    img3_rx = float(300/img3.width)
-    img3_ry = float(300/img3.height)
-    #img3 = img3.resize((200,200))
-    img3 = img3.resize((int(img3.width*min(img3_rx,img3_ry)),int(img3.height*min(img3_rx,img3_ry))))
+    img3 = img3.resize((200,200))
     img3 = ImageTk.PhotoImage(img3)
     canvas.create_image(880,320,image=img3)
 
@@ -201,10 +187,8 @@ canvas.create_image(150,400,image=img)
 fkd =tk.PhotoImage(file="images/fukidasi.png")
 canvas.create_image(700,710,image=fkd)
 
-#info =tk.Label(root,text='画像を入れるとイロハさんの「知ってる範囲」で何なのか教えてくれる・・・のだが・・・',font=('Arial',14),bg='white')
-#info.place(x=300,y=40)
-title = tk.PhotoImage(file="images/title.png")
-canvas.create_image(650,80,image=title)
+info =tk.Label(root,text='画像を入れるとイロハさんの「知ってる範囲」で何なのか教えてくれる・・・のだが・・・',font=('Arial',14),bg='white')
+info.place(x=300,y=40)
 
 label=tk.Label(root,text='画像入力',font=('Arial',16))
 label.place(x=330,y=480)

@@ -6,9 +6,10 @@ from opencv_japanese import imread
 import imagehash
 import tkinter.filedialog
 
+import numpy as np                     #2022/0725:お試し追加
+
 img2             = ""
 img3             = ""
-img4             = ""
 
 #['00.png',''],
 
@@ -16,12 +17,12 @@ gazo =[
     ['cry.png'  ,'ハカセ'],
     ['smile.png','ハカセ'],
     ['iroha.png','いろは（私）'],
-    ['kaba1.jpg','コビトカバ'],
-    ['kaba2.jpg','コビトカバ'],
-    ['kaba3.jpg','コビトカバ'],
-    ['cat1.png','ネコ'],
-    ['cat2.jpg','ネコ'],
-    ['cat3.jpg','ネコ'],
+    #['kaba1.jpg','コビトカバ'],
+    #['kaba2.jpg','コビトカバ'],
+    #['kaba3.jpg','コビトカバ'],
+    #['cat1.png','ネコ'],
+    #['cat2.jpg','ネコ'],
+    #['cat3.jpg','ネコ'],
     ['01.png','レタス'],
     ['02.png','トマト'],
     ['03.png','パプリカ'],
@@ -65,19 +66,21 @@ gazo =[
     ['41.png','いぬ'], 
     ['42.png','青い鳥さん'],  
     ['43.png','ひよこさん'], 
+
 ]
 
 def btn_click():
-    global   img2,img3,img4
+    global   img2,img3
     input    =  entry.get()
     type     =  combobox.get()
 
     # 画像比べ処理
-    hi_hit            =  0
+    hi_hit            =  255
     hi_hit_image      =  ""
     hi_hit_image_name =  ""
 
     if type == 'ヒストグラム比較':
+        hi_hit   =  0
         dirname  =  os.path.dirname(__file__)
         images1  =  imread(dirname + '\\' + input)
         #images1  =  imread(dirname + '\\images/' + input)     #テスト用にフォルダに入れたらにする
@@ -90,10 +93,15 @@ def btn_click():
         # 画像をヒストグラム化する（まず入力のみ）
         image1_hist = cv2.calcHist([images1], [2], None, [256], [0, 256])
 
+    elif type == 'numpy(要素番号比較？）':                      #2022/0725:お試し追加
+        images1 = cv2.imread(input)                           #2022/0725:お試し追加
+        height = images1.shape[0]
+        width  = images1.shape[1]
+        img_size = (int(width), int(height))
+
     else:
         images1  =  Image.open(input)
         hash     =  imagehash.average_hash(images1)
-        hi_hit   =  255                                        #適正なのか不明；
    
     #判定処理
     for i in range(len(gazo)):
@@ -107,17 +115,28 @@ def btn_click():
 
             #print(hit)   #想像以上にレートが高い・・・
 
-            if float(hi_hit) < float(hit):
+            if float(hi_hit) < float(hit):                  #100に近い数字程似ている　95-80くらいの判定が多い
                 hi_hit            = hit
                 hi_hit_image      = gazo[i][0]
                 hi_hit_image_name = gazo[i][1]
+
+        elif type == 'numpy(要素番号比較？）':                #2022/0725:お試し追加
+            images2 = cv2.imread('images/' + gazo[i][0])
+            image2  = cv2.resize(images2, img_size)
+            hit     = float(np.count_nonzero(images1 - image2)/10000)
+            print(hit)
+
+            if float(hi_hit) > float(hit):                      #0に近い程似ている
+                hi_hit            = hit
+                hi_hit_image      = gazo[i][0]
+                hi_hit_image_name = gazo[i][1] 
 
         else:       #ハッシュ値変換比較
             images2    = Image.open('images/' + gazo[i][0])
             otherhash  = imagehash.average_hash(images2)            
             hit        = hash - otherhash
 
-            if int(hi_hit) > int(hit):
+            if int(hi_hit) > int(hit):                     #0に近い程似ている 全然違う画像でも20以内の場合有り
                 hi_hit            = hit
                 hi_hit_image      = gazo[i][0]
                 hi_hit_image_name = gazo[i][1] 
@@ -125,61 +144,50 @@ def btn_click():
     #判定結果
     if type == 'ヒストグラム比較':
         rate = hi_hit * 100
+    elif type == 'numpy(要素番号比較？）': 
+        rate = 100- hi_hit    
     else:        
         rate = 100 - (hi_hit * 2)
-        
+
     if (rate)    == 100:
         word  = 'これなら知ってます！'
         word2 = 'です！絶対！'
-        img4 = Image.open('images/kira.png')
-        img4 = img4.resize((128,96))
-        img4 = ImageTk.PhotoImage(img4)
-        canvas.create_image(225,200,image=img4,tag="emo")
-
     elif (rate)  >= 98:
         word  = 'あっ！これなら'
         word2 = 'だと思います！'
-        canvas.delete("emo")
+    elif (rate)  >= 90:
+        word  = '多分なんですけど・・'
+        word2 = 'ですかね・・。'
+    elif (rate)  >= 75:
+        word  = 'えっ・・・'
+        word2 = 'とかだったりして・・・。'
+    elif (rate)  >= 40:
+        word =  'わからないですけど・・・'
+        word2 = 'ですかね・・・ハハ。'
     else:
-        img4 = Image.open('images/ase.png')
-        img4 = img4.resize((80,80))
-        img4 = ImageTk.PhotoImage(img4)
-        canvas.create_image(210,170,image=img4,tag="emo")
-
-        if (rate)  >= 90:
-            word  = '多分なんですけど・・'
-            word2 = 'とか・・かな。'
-        
-        elif (rate)  >= 75:
-            word  = 'えっ・・・'
-            word2 = 'みたいな・・？。'
-
-        elif (rate)  >= 40:
-            word =  'わからないですけど・・・'
-            word2 = 'ですかね・・・ハハ。'
-        else:
-            word  ='・・・'
-            word2 ='・・とか？'
+        word  ='・・・'
+        word2 ='・・とか？'
         
     label3['text'] = '{}(判定結果値：{:.2f})'.format(word,rate)
     label4['text'] = '{}{}'.format(hi_hit_image_name,word2)
+    #img2  =tk.PhotoImage(file="images/" + hi_hit_image)
+    #canvas.create_image(700,350,image=img2)
+
+    #img2 = Image.open('images/' + hi_hit_image)
+    #img2e = tk.PhotoImage(img2)
 
     img2_txt=tk.Label(root,text='～入力した画像～',font=('Arial',14),bg='pink')
-    img2_txt.place(x=430,y=140)
+    img2_txt.place(x=430,y=150)
     img2 = Image.open(input)
-    img2_rx = float(300/img2.width)
-    img2_ry = float(300/img2.height)
-    img2 = img2.resize((int(img2.width*min(img2_rx,img2_ry)),int(img2.height*min(img2_rx,img2_ry))))
+    img2 = img2.resize((200,200))
     img2 = ImageTk.PhotoImage(img2)
     canvas.create_image(525,320,image=img2)
 
     img3_txt=tk.Label(root,text='～イロハさんの回答～',font=('Arial',14),bg='pink')
-    img3_txt.place(x=780,y=140)
+    img3_txt.place(x=780,y=150)
+    #print('通過' + hi_hit_image)
     img3 = Image.open('images/' + hi_hit_image)
-    img3_rx = float(300/img3.width)
-    img3_ry = float(300/img3.height)
-    #img3 = img3.resize((200,200))
-    img3 = img3.resize((int(img3.width*min(img3_rx,img3_ry)),int(img3.height*min(img3_rx,img3_ry))))
+    img3 = img3.resize((200,200))
     img3 = ImageTk.PhotoImage(img3)
     canvas.create_image(880,320,image=img3)
 
@@ -201,10 +209,8 @@ canvas.create_image(150,400,image=img)
 fkd =tk.PhotoImage(file="images/fukidasi.png")
 canvas.create_image(700,710,image=fkd)
 
-#info =tk.Label(root,text='画像を入れるとイロハさんの「知ってる範囲」で何なのか教えてくれる・・・のだが・・・',font=('Arial',14),bg='white')
-#info.place(x=300,y=40)
-title = tk.PhotoImage(file="images/title.png")
-canvas.create_image(650,80,image=title)
+info =tk.Label(root,text='画像を入れるとイロハさんの「知ってる範囲」で何なのか教えてくれる・・・のだが・・・',font=('Arial',14),bg='white')
+info.place(x=300,y=40)
 
 label=tk.Label(root,text='画像入力',font=('Arial',16))
 label.place(x=330,y=480)
@@ -224,7 +230,8 @@ label3.place(x=330,y=600)
 label4 = tk.Label(root,text='',font=('Arial',28),bg='white')
 label4.place(x=330,y=650)
 
-module = ('ヒストグラム比較', 'ハッシュ値変換比較')
+#module = ('ヒストグラム比較', 'ハッシュ値変換比較')
+module = ('ヒストグラム比較', 'ハッシュ値変換比較','numpy(要素番号比較？）')   #2022/0725:お試し追加
 v = tk.StringVar()
 combobox = ttk.Combobox(root, textvariable= v, values=module, style="office.TCombobox")
 combobox.current(0)
